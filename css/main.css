@@ -26,14 +26,14 @@ border: 2px solid rgba(255, 0, 0, 0.44);
 	background-image: linear-gradient(#f9f9f9, #f3f3f3);
 	background-repeat: repeat-x;
 	border-bottom: 1px #eaeaea solid;*/
-	/*background-color: #eaeaea;
+	background-color: #eaeaea;
 	background-image: -moz-linear-gradient(#fafafa, #eaeaea);
 	background-image: -webkit-linear-gradient(#fafafa, #eaeaea);
 	background-image: linear-gradient(#fafafa, #eaeaea);
 	background-repeat: repeat-x;
-	border: 1px solid #d5d5d5;*/
-	background: rgba(0, 114, 198, 0.75);
-	color: rgba(255, 255, 255, 0.7);
+	border: 1px solid #d5d5d5;
+/*	background: rgba(0, 114, 198, 0.75);
+	color: rgba(255, 255, 255, 0.7);*/
 }
 
 .modal-header h3 {

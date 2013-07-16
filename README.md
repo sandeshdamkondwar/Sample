@@ -17,5 +17,5 @@ Nothing to describe sorry
 
 **Sandesh Damkondwar**
 
-+ [http://twitter.com/sandydamy](On Twitter)
-+ [http://facebook.com/sandy2302](On Facebook)
++ [On Twitter](http://twitter.com/sandydamy)
++ [On Facebook](http://facebook.com/sandy2302)
