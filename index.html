@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Title</title>
+	<title>Letter Based Correction</title>
 	<link href="css/bootstrap.css" rel="stylesheet">
     <link href="css/bootstrap-responsive.css" rel="stylesheet">
     <link href="css/custom-responsive.css" rel="stylesheet">
+    <link href="css/font-awesome.css" rel="stylesheet">
     <link href="css/main.css" rel="stylesheet">
 </head>
 <body>
 	<a data-toggle="modal" href="#correctionModal" class="btn" id="launchCorrection">Launch demo modal</a>
 
-	<div id="correctionModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="correctionModalLabel" aria-hidden="true">
+	<div id="correctionModal" class="modal hide" tabindex="-1" role="dialog" aria-labelledby="correctionModalLabel" aria-hidden="true">
 	  <div class="modal-header">
-	    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+	    <span class="icon-remove pull-right customClose" data-dismiss="modal"></span>
+	    <!-- <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button> -->
 	    <h3 id="correctionModalLabel">Letter Based Correction</h3>
 	  </div>
 	  <div class="modal-body">
@@ -29,24 +31,44 @@
 	  </div>
 	  <div class="modal-footer">
 	    <p class="pull-left" style="margin:0"><span>Enter command: </span><input autofocus id="goToLetterGroup" type="text" placeholder="" maxlength="1"><input autofocus id="listToBeMoved" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group" title="Popover on top">Get Help</a></p>
+	    <!-- <span class="icon-remove pull-right" data-dismiss="modal"></span> -->
 	    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 	    <button class="btn btn-primary" onclick="saveModifiedData()">Save Changes</button>
 	  </div>
 	</div>
 	<script src="js/jquery.js"></script>
+	<script src="js/underscore.js"></script>
 	<script src="js/bootstrap.js"></script>
+	<script id="btnGroupTemplate" type="text/template">
+		<div class='btn-group btn-group-vertical'>
+			<button disabled type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>
+			<button type='button' class='btn customBtn imageParent'><img class='img-polaroid' src='<%= imgSource %>' alt='<%= value %>.png'></button>
+			<button type='button' class='btn customBtn enterLetterParent' tabindex='-1'><input class='enterLetter' type='text' value='<%= value %>' maxlength='1'></button>
+		</div>
+	</script>
+	<script id="letterGroupTemplate" type="text/template">
+		<div class='media'>
+		  	<a class='pull-left' href='#'>
+		    	<img class='media-object img-polaroid' src='img/<%= name %>_original.png' style='width:64px; height:64px;' alt="<%= name %>.png">
+		  	</a>
+		  	<div class='media-body'>
+		    	<div class='centerBtns letterGroup' data-letter="<%= name %>"</div>
+			</div>
+		</div>
+	</script>
 	<script>
 		var currentActiveGroup;
+
+		function isNumber(n) {
+		  return !isNaN(parseFloat(n)) && isFinite(n);
+		}
+
 		$('#correctionModal').on('shown', function () {
 			$('#goToLetterGroup').focus().select(); 
 		});
 
 		$('#correctionModal').on('hidden', function () {
 			$('#goToLetterGroup').val("");
-		});
-
-		$('#goToLetterGroup').bind('input', function(e) {
-			
 		});
 
 		$('.btn input').on('keyup', function(e) {
@@ -127,10 +149,6 @@
 			return false
 		}
 
-		function isNumber(n) {
-		  return !isNaN(parseFloat(n)) && isFinite(n);
-		}
-
 		function saveModifiedData () {
 			//Save functionality goes here
 			$('.newlyAdded').removeClass('newlyAdded');
@@ -138,17 +156,11 @@
 		}
 
 		function createLetterGroup (groupName){
-			var mediaFormat = "<div class='media'>" +
-				"  <a class='pull-left' href='#'>" +
-				"    <img class='media-object img-polaroid' src='img/" + groupName.toLowerCase() + "_original.png' style='width:64px; height:64px;' alt=" + groupName + ".png>" +
-				"  </a>" +
-				"  <div class='media-body'>" +
-				"    <div class='centerBtns letterGroup' data-letter='" + groupName.toUpperCase() + "'>" +
-				"    </div>" +
-				"	</div>" +
-				"</div>";
+			var strLetterGroup = _.template($('#letterGroupTemplate').html(),{
+				name:groupName.toUpperCase()
+			});
 
-				$('#mediaGroup').append(mediaFormat);
+			$('#mediaGroup').append(strLetterGroup);
 		}
 
 		function addElementInGroup (groupName, elementToBeMoved) {
@@ -162,7 +174,7 @@
 			previousGroupName = elementToBeMoved.find('input').val();
 			elementToBeMoved.find('input').val(groupName);
 			$targetGroup.append(elementToBeMoved);
-			elementToBeMoved.hide().show(300);
+			//elementToBeMoved.hide().show("300");
 			elementToBeMoved.addClass('newlyAdded');
 			
 			reRenderNumberBadegs();
@@ -174,44 +186,23 @@
 			}
 		}
 
-		$("#showHelp").on('click', function() {
-			if($(".alert").is(":visible")) {
-				$(".alert").hide();
-				this.innerHTML = "Show Help";
-			} else {
-				$(".alert").show();
-				this.innerHTML = "Hide Help";
-			}
-		});
-
-		$('.alert').bind('closed', function () {
-		  $("#showHelp").remove();
-		});
-
-		$('#correctionModal').modal();
-
 		function reRenderNumberBadegs (){
 			$('.numberBadge').each(function () {
 				this.innerHTML = $(this).closest('.btn-group').index() + 1;
 			});
 		}
 
-		function renderBadges() {
-			reRenderNumberBadegs();
-		}
-
 		function createBtnGroup(imageScanned, scanResultValue){
 			var imgSource = imageScanned,
 				value = scanResultValue.toUpperCase(),
-				$targetGroup = $(".letterGroup[data-letter=" + value + "]"),
-				strBtnGroup = "<div class='btn-group btn-group-vertical'>" +
-				"<button disabled type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>" +
-				"<button type='button' class='btn customBtn imageParent'><img class='img-polaroid' src='" + imgSource + "' alt=''></button>" +
-				"<button type='button' class='btn customBtn enterLetterParent' tabindex='-1'><input class='enterLetter' type='text' value='" + value + "' maxlength='1'></button>" +
-				"</div>";
+				$targetGroup = $(".letterGroup[data-letter=" + value + "]");
 
+			var strBtnGroup = _.template($("#btnGroupTemplate").html(), {
+				imgSource: imageScanned,
+				value: scanResultValue
+			});
 
-			if($targetGroup.length == 0){
+			if($targetGroup.length == 0) {
 				createLetterGroup(value);
 				$targetGroup = $(".letterGroup[data-letter=" + value + "]");
 			}
@@ -219,9 +210,9 @@
 			$targetGroup.append(strBtnGroup);
 		}
 
-
 		//Adding btnGroups here
 		function createBtnGroups () {
+
 			for (var i = 0; i <= 26; i++) {
 				if(i === 1 || i === 7 || i === 9)	
 					createBtnGroup("img/b.png", "a");
@@ -244,34 +235,21 @@
 				createBtnGroup("img/a.png", "t");
 			}
 
-			// for (var i = 0; i <= 26; i++) {
-			// 	createBtnGroup("img/t.jpg", "t");
-			// }
-
 			$('.imageParent').on('click', function () {
 				$(this).next().toggleClass('enterLetterParent').children('input').focus();
 			});
 		}
 
 		function init() {
+			$('#correctionModal').modal();
 			createBtnGroups();
-			renderBadges();			
+			reRenderNumberBadegs();			
+			$('.customPopover').popover({
+				html: true
+			});
 		}
-
-		$('.customPopover').popover({
-			html: true
-		});
+		
 		init();
-	</script>
-	<script>
-	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-	  ga('create', 'UA-42457770-1', 'mywebsite.com');
-	  ga('send', 'pageview');
-
 	</script>
 </body>
 </html>
