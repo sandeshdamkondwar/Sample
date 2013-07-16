@@ -28,25 +28,32 @@
 	  	</div>
 	  </div>
 	  <div class="modal-footer">
-	    <p class="pull-left" style="margin:0"><span>Enter command: </span><input autofocus id="goToLetterGroup" type="text" placeholder="" maxlength="1"><input autofocus id="listToBeMoved" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group" title="Popover on top">Get Help</a></p>
+	    <p class="pull-left" style="margin:0"><span>Enter the command: </span><input autofocus id="goTo" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group" title="Popover on top">Get Help</a></p>
 	    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 	    <button class="btn btn-primary" onclick="saveModifiedData()">Save Changes</button>
 	  </div>
 	</div>
 	<script src="js/jquery.js"></script>
 	<script src="js/bootstrap.js"></script>
+	<script src="js/keymaster.js"></script>
 	<script>
-		var currentActiveGroup;
 		$('#correctionModal').on('shown', function () {
-			$('#goToLetterGroup').focus().select(); 
+			$('#goTo').focus(); 
 		});
 
 		$('#correctionModal').on('hidden', function () {
-			$('#goToLetterGroup').val("");
+		  $('#goTo').val("");
 		});
 
-		$('#goToLetterGroup').bind('input', function(e) {
-			
+		$('#goTo').on('keyup', function(e) {
+			var strGoTo = $('#goTo').val();
+			var goToNumber = strGoTo.substring(0, strGoTo.length - 1);
+			var lastChar = strGoTo.substring(strGoTo.length - 1);
+			var isNum = /^\d+$/.test(goToNumber);
+			var isLastCharAlpha = /[A-Za-z]/.test(lastChar);
+			if(isNum && isLastCharAlpha) {
+				$('.btn input').eq(parseInt(goToNumber) -1).val(lastChar);
+			}
 		});
 
 		$('.btn input').on('keyup', function(e) {
@@ -56,9 +63,8 @@
 		});
 
 		$(document).keydown(function (e) {
-			// CTRL + G(72) for focusing on #goToLetterGroup input
-			if(e.ctrlKey && e.keyCode == 71 || e.keyCode === 192) {
-				$("#goToLetterGroup").focus().select();
+			if(e.ctrlKey && e.keyCode == 71) {
+				$("#goTo").focus();
 				e.preventDefault();
 			}
 			// CTRL + S(83) for saving modified data
@@ -66,70 +72,62 @@
 				saveModifiedData();
 				e.preventDefault();
 			}
-
-		});
+		})
 
 		$(document).keyup(function(e) {
 			if($(e.target).hasClass('enterLetter')) {
-				var letterEntered = $(e.target).val().toUpperCase(),
+				var letterEntered = $(e.target).val(),
 					isChar = /[A-Za-z]/.test(letterEntered);
 
 				if(isChar) {
-					var $targetGroup = $(".letterGroup[data-letter=" + letterEntered + "]"),
+					var $targetGroup = $(".letterGroup[data-letter=" + letterEntered.toUpperCase() + "]"),
 						$elementToBeMoved = $(e.target).closest('.btn-group'),
 						oldGroupName = $elementToBeMoved.closest('.letterGroup');
 					if($targetGroup.length !== 0)
-						addElementInGroup(letterEntered, $elementToBeMoved);
+						addElementInGroup(letterEntered.toUpperCase(), $elementToBeMoved);
 					else {
-						createLetterGroup(letterEntered);
-						addElementInGroup(letterEntered, $elementToBeMoved);
+						createGroup(letterEntered.toUpperCase());
+						addElementInGroup(letterEntered.toUpperCase(), $elementToBeMoved);
 					}
 					reRenderNumberBadegs();
 				}
 			}
 		});
 
-		$("#goToLetterGroup").bind('input', function (e) {
-			currentActiveGroup = this.value.toUpperCase();
-			$('.letterGroupActive').removeClass('letterGroupActive');
-			$(".letterGroup[data-letter=" + currentActiveGroup + "]").addClass('letterGroupActive');
-			$('#listToBeMoved').focus().select();
-		});
+		$("#goTo").bind('input', function (e) {
+			// Format of command: First charater should be alphabet , 
+			// remaining should be numbers except last character and last character should be alphabet again
+			var isFirstAlpha = /^[A-Za-z]/.test(e.target.value),
+				remainingNumbers = parseInt(e.target.value.substring(1, e.target.value.length)),
+				isRemainingNumbers = !isNaN(remainingNumbers),
+				$sourceGroup, $destinationGroup, destinationGroupName;
 
-		$("#listToBeMoved").bind('input', function (e) {
-			var $sourceGroup = $(".letterGroup[data-letter=" + currentActiveGroup + "]");
-			var targetElement = this.value;
-			
-			targetElement = isCorrectFormat(targetElement);
-			if(targetElement) {
-				var $elementToBeMoved = $sourceGroup.find('.btn-group').eq(targetElement.number - 1);
-				addElementInGroup(targetElement.target, $elementToBeMoved);
-				e.target.value = "";
-			}
-		});
-
-		function isCorrectFormat(numberTarget) {
-			var number = numberTarget.substring(0, numberTarget.length - 1),
-				target = numberTarget[numberTarget.length - 1];
-			
-
-			if(isNumber(number)) {
-				if(/[A-Za-z]/.test(target))
-					return {
-						number: number,
-						target: target.toUpperCase()
+			if(isFirstAlpha) {
+				$sourceGroup  = $(".letterGroup[data-letter=" + e.target.value[0].toUpperCase() + "]");
+				$sourceGroup.addClass('letterGroupActive');
+				
+				// parseInt function can ommit the last alphabets which is part of our command
+				if(isRemainingNumbers) {
+					$('.btnGroupActive').removeClass('btnGroupActive');
+					$btnGroup = $($sourceGroup.children()[remainingNumbers - 1]).addClass('btnGroupActive');
+					if(/^[A-Za-z]/.test(e.target.value[e.target.value.length -1])) {
+						destinationGroupName = e.target.value[e.target.value.length -1].toUpperCase();
+						$destinationGroup = $(".letterGroup[data-letter=" + destinationGroupName + "]")
+						if($destinationGroup.length == 0) {
+							createGroup(destinationGroupName);
+						}
+						addElementInGroup(e.target.value[e.target.value.length -1].toUpperCase(), $btnGroup);
+						$('.btnGroupActive').removeClass('btnGroupActive');
 					}
+				}
+				else {
+					$('.btnGroupActive').removeClass('btnGroupActive');
+				}
 			}
-			var $sourceGroup = $(".letterGroup[data-letter=" + currentActiveGroup + "]");
-			number = numberTarget.substring(0, numberTarget.length),
-			$('.btnGroupActive').removeClass('btnGroupActive');
-			$sourceGroup.find('.btn-group').eq(number - 1).addClass('btnGroupActive');
-			return false
-		}
-
-		function isNumber(n) {
-		  return !isNaN(parseFloat(n)) && isFinite(n);
-		}
+			else {
+				$('.letterGroupActive').removeClass('letterGroupActive');
+			}
+		});
 
 		function saveModifiedData () {
 			//Save functionality goes here
@@ -137,14 +135,14 @@
 			$('#correctionModal').modal("hide");
 		}
 
-		function createLetterGroup (groupName){
+		function createGroup (groupName){
 			var mediaFormat = "<div class='media'>" +
 				"  <a class='pull-left' href='#'>" +
 				"    <img class='media-object img-polaroid' src='img/" + groupName.toLowerCase() + "_original.png' style='width:64px; height:64px;' alt=" + groupName + ".png>" +
 				"  </a>" +
 				"  <div class='media-body'>" +
-				"    <div class='centerBtns letterGroup' data-letter='" + groupName.toUpperCase() + "'>" +
-				"    </div>" +
+				"    <center class='centerBtns letterGroup' data-letter='" + groupName.toUpperCase() + "'>" +
+				"    </center>" +
 				"	</div>" +
 				"</div>";
 
@@ -152,11 +150,7 @@
 		}
 
 		function addElementInGroup (groupName, elementToBeMoved) {
-			var $targetGroup = $(".letterGroup[data-letter=" + groupName + "]"),
-				$sourceGroup;
-			if($targetGroup.length == 0)
-				createLetterGroup(groupName);
-			$targetGroup = $(".letterGroup[data-letter=" + groupName + "]");
+			var $targetGroup = $(".letterGroup[data-letter=" + groupName + "]");
 			var previousGroupName;
 			elementToBeMoved.find('input').parent().addClass("enterLetterParent");
 			previousGroupName = elementToBeMoved.find('input').val();
@@ -166,12 +160,14 @@
 			elementToBeMoved.addClass('newlyAdded');
 			
 			reRenderNumberBadegs();
+			$('.letterGroupActive').removeClass('letterGroupActive');
 			$('.btnGroupActive').removeClass('btnGroupActive');
 			// If group is empty then remove it
 			$sourceGroup = $(".letterGroup[data-letter=" + previousGroupName.toUpperCase() + "]");
 			if($sourceGroup.find('.btn-group').length == 0) {
 				$sourceGroup.closest('.media').remove();
 			}
+			$('#goTo').val("");
 		}
 
 		$("#showHelp").on('click', function() {
@@ -202,8 +198,8 @@
 
 		function createBtnGroup(imageScanned, scanResultValue){
 			var imgSource = imageScanned,
-				value = scanResultValue.toUpperCase(),
-				$targetGroup = $(".letterGroup[data-letter=" + value + "]"),
+				value = scanResultValue,
+				$targetGroup = $(".letterGroup[data-letter=" + value.toUpperCase() + "]"),
 				strBtnGroup = "<div class='btn-group btn-group-vertical'>" +
 				"<button disabled type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>" +
 				"<button type='button' class='btn customBtn imageParent'><img class='img-polaroid' src='" + imgSource + "' alt=''></button>" +
@@ -211,42 +207,38 @@
 				"</div>";
 
 
-			if($targetGroup.length == 0){
-				createLetterGroup(value);
-				$targetGroup = $(".letterGroup[data-letter=" + value + "]");
-			}
+			if($targetGroup.length == 0)
+				createGroup(value);
 
-			$targetGroup.append(strBtnGroup);
+			$targetGroup.append(strBtnGroup);			
 		}
 
-
-		//Adding btnGroups here
 		function createBtnGroups () {
 			for (var i = 0; i <= 26; i++) {
-				if(i === 1 || i === 7 || i === 9)	
-					createBtnGroup("img/b.png", "a");
 				createBtnGroup("img/a.png", "a");
 			}
 
 			for (var i = 0; i <= 36; i++) {
 				if(i === 14 || i === 10 || i === 21)	
 					createBtnGroup("img/a.png", "b");
+
 				createBtnGroup("img/b.png", "b");
 			}
 
 			for (var i = 0; i <= 36; i++) {
-				if(i === 0 || i === 8)	
+				if(i === 14 || i === 10 || i === 21)	
 					createBtnGroup("img/a.png", "c");
+
 				createBtnGroup("img/c.jpg", "c");
 			}
 
-			for (var i = 0; i <= 0; i++) {
-				createBtnGroup("img/a.png", "t");
+			for (var i = 0; i <= 26; i++) {
+				createBtnGroup("img/p.jpg", "p");
 			}
 
-			// for (var i = 0; i <= 26; i++) {
-			// 	createBtnGroup("img/t.jpg", "t");
-			// }
+			for (var i = 0; i <= 26; i++) {
+				createBtnGroup("img/t.jpg", "t");
+			}
 
 			$('.imageParent').on('click', function () {
 				$(this).next().toggleClass('enterLetterParent').children('input').focus();
@@ -262,16 +254,6 @@
 			html: true
 		});
 		init();
-	</script>
-	<script>
-	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-	  ga('create', 'UA-42457770-1', 'mywebsite.com');
-	  ga('send', 'pageview');
-
 	</script>
 </body>
 </html>
