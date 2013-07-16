@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Title</title>
+	<link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="css/custom-responsive.css" rel="stylesheet">
+    <link href="css/main.css" rel="stylesheet">
+</head>
+<body>
+	<a data-toggle="modal" href="#correctionModal" class="btn" id="launchCorrection">Launch demo modal</a>
+
+	<div id="correctionModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="correctionModalLabel" aria-hidden="true">
+	  <div class="modal-header">
+	    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+	    <h3 id="correctionModalLabel">Letter Based Correction</h3>
+	  </div>
+	  <div class="modal-body">
+	  	<!-- <p><span>Enter the command: </span><input autofocus id="goTo" type="text" placeholder=""><a href="#" class="pull-right" id="showHelp">How to Write a Command</a></p> -->
+	  	<div class="alert alert-block fade in" style="display:none;">
+        <button type="button" class="close" data-dismiss="alert" title="Dismiss this alert!!!">×</button>
+        <h4 class="alert-heading">Command Format</h4>
+        <p>A number should be followed by a letter to replace the existing letter</p>
+        <p>Examples: "21J", "1M", "16H"</p>
+      </div>
+	  	<div id="mediaGroup">
+									    
+	  	</div>
+	  </div>
+	  <div class="modal-footer">
+	    <p class="pull-left" style="margin:0"><span>Enter command: </span><input autofocus id="goToLetterGroup" type="text" placeholder="" maxlength="1"><input autofocus id="listToBeMoved" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group" title="Popover on top">Get Help</a></p>
+	    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+	    <button class="btn btn-primary" onclick="saveModifiedData()">Save Changes</button>
+	  </div>
+	</div>
+	<script src="js/jquery.js"></script>
+	<script src="js/bootstrap.js"></script>
+	<script>
+		var currentActiveGroup;
+		$('#correctionModal').on('shown', function () {
+			$('#goToLetterGroup').focus().select(); 
+		});
+
+		$('#correctionModal').on('hidden', function () {
+			$('#goToLetterGroup').val("");
+		});
+
+		$('#goToLetterGroup').bind('input', function(e) {
+			
+		});
+
+		$('.btn input').on('keyup', function(e) {
+			if(e.keyCode == 13) {
+				$('#correctionModal').modal("hide");
+			}
+		});
+
+		$(document).keydown(function (e) {
+			// CTRL + G(72) for focusing on #goToLetterGroup input
+			if(e.ctrlKey && e.keyCode == 71 || e.keyCode === 192) {
+				$("#goToLetterGroup").focus().select();
+				e.preventDefault();
+			}
+			// CTRL + S(83) for saving modified data
+			else if(e.ctrlKey && e.keyCode == 83) {
+				saveModifiedData();
+				e.preventDefault();
+			}
+
+		});
+
+		$(document).keyup(function(e) {
+			if($(e.target).hasClass('enterLetter')) {
+				var letterEntered = $(e.target).val().toUpperCase(),
+					isChar = /[A-Za-z]/.test(letterEntered);
+
+				if(isChar) {
+					var $targetGroup = $(".letterGroup[data-letter=" + letterEntered + "]"),
+						$elementToBeMoved = $(e.target).closest('.btn-group'),
+						oldGroupName = $elementToBeMoved.closest('.letterGroup');
+					if($targetGroup.length !== 0)
+						addElementInGroup(letterEntered, $elementToBeMoved);
+					else {
+						createLetterGroup(letterEntered);
+						addElementInGroup(letterEntered, $elementToBeMoved);
+					}
+					reRenderNumberBadegs();
+				}
+			}
+		});
+
+		$("#goToLetterGroup").bind('input', function (e) {
+			currentActiveGroup = this.value.toUpperCase();
+			$('.letterGroupActive').removeClass('letterGroupActive');
+			$(".letterGroup[data-letter=" + currentActiveGroup + "]").addClass('letterGroupActive');
+			$('#listToBeMoved').focus().select();
+		});
+
+		$("#listToBeMoved").bind('input', function (e) {
+			var $sourceGroup = $(".letterGroup[data-letter=" + currentActiveGroup + "]");
+			var targetElement = this.value;
+			
+			targetElement = isCorrectFormat(targetElement);
+			if(targetElement) {
+				var $elementToBeMoved = $sourceGroup.find('.btn-group').eq(targetElement.number - 1);
+				addElementInGroup(targetElement.target, $elementToBeMoved);
+				e.target.value = "";
+			}
+		});
+
+		function isCorrectFormat(numberTarget) {
+			var number = numberTarget.substring(0, numberTarget.length - 1),
+				target = numberTarget[numberTarget.length - 1];
+			
+
+			if(isNumber(number)) {
+				if(/[A-Za-z]/.test(target))
+					return {
+						number: number,
+						target: target.toUpperCase()
+					}
+			}
+			var $sourceGroup = $(".letterGroup[data-letter=" + currentActiveGroup + "]");
+			number = numberTarget.substring(0, numberTarget.length),
+			$('.btnGroupActive').removeClass('btnGroupActive');
+			$sourceGroup.find('.btn-group').eq(number - 1).addClass('btnGroupActive');
+			return false
+		}
+
+		function isNumber(n) {
+		  return !isNaN(parseFloat(n)) && isFinite(n);
+		}
+
+		function saveModifiedData () {
+			//Save functionality goes here
+			$('.newlyAdded').removeClass('newlyAdded');
+			$('#correctionModal').modal("hide");
+		}
+
+		function createLetterGroup (groupName){
+			var mediaFormat = "<div class='media'>" +
+				"  <a class='pull-left' href='#'>" +
+				"    <img class='media-object img-polaroid' src='img/" + groupName.toLowerCase() + "_original.png' style='width:64px; height:64px;' alt=" + groupName + ".png>" +
+				"  </a>" +
+				"  <div class='media-body'>" +
+				"    <div class='centerBtns letterGroup' data-letter='" + groupName.toUpperCase() + "'>" +
+				"    </div>" +
+				"	</div>" +
+				"</div>";
+
+				$('#mediaGroup').append(mediaFormat);
+		}
+
+		function addElementInGroup (groupName, elementToBeMoved) {
+			var $targetGroup = $(".letterGroup[data-letter=" + groupName + "]"),
+				$sourceGroup;
+			if($targetGroup.length == 0)
+				createLetterGroup(groupName);
+			$targetGroup = $(".letterGroup[data-letter=" + groupName + "]");
+			var previousGroupName;
+			elementToBeMoved.find('input').parent().addClass("enterLetterParent");
+			previousGroupName = elementToBeMoved.find('input').val();
+			elementToBeMoved.find('input').val(groupName);
+			$targetGroup.append(elementToBeMoved);
+			elementToBeMoved.hide().show(300);
+			elementToBeMoved.addClass('newlyAdded');
+			
+			reRenderNumberBadegs();
+			$('.btnGroupActive').removeClass('btnGroupActive');
+			// If group is empty then remove it
+			$sourceGroup = $(".letterGroup[data-letter=" + previousGroupName.toUpperCase() + "]");
+			if($sourceGroup.find('.btn-group').length == 0) {
+				$sourceGroup.closest('.media').remove();
+			}
+		}
+
+		$("#showHelp").on('click', function() {
+			if($(".alert").is(":visible")) {
+				$(".alert").hide();
+				this.innerHTML = "Show Help";
+			} else {
+				$(".alert").show();
+				this.innerHTML = "Hide Help";
+			}
+		});
+
+		$('.alert').bind('closed', function () {
+		  $("#showHelp").remove();
+		});
+
+		$('#correctionModal').modal();
+
+		function reRenderNumberBadegs (){
+			$('.numberBadge').each(function () {
+				this.innerHTML = $(this).closest('.btn-group').index() + 1;
+			});
+		}
+
+		function renderBadges() {
+			reRenderNumberBadegs();
+		}
+
+		function createBtnGroup(imageScanned, scanResultValue){
+			var imgSource = imageScanned,
+				value = scanResultValue.toUpperCase(),
+				$targetGroup = $(".letterGroup[data-letter=" + value + "]"),
+				strBtnGroup = "<div class='btn-group btn-group-vertical'>" +
+				"<button disabled type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>" +
+				"<button type='button' class='btn customBtn imageParent'><img class='img-polaroid' src='" + imgSource + "' alt=''></button>" +
+				"<button type='button' class='btn customBtn enterLetterParent' tabindex='-1'><input class='enterLetter' type='text' value='" + value + "' maxlength='1'></button>" +
+				"</div>";
+
+
+			if($targetGroup.length == 0){
+				createLetterGroup(value);
+				$targetGroup = $(".letterGroup[data-letter=" + value + "]");
+			}
+
+			$targetGroup.append(strBtnGroup);
+		}
+
+
+		//Adding btnGroups here
+		function createBtnGroups () {
+			for (var i = 0; i <= 26; i++) {
+				if(i === 1 || i === 7 || i === 9)	
+					createBtnGroup("img/b.png", "a");
+				createBtnGroup("img/a.png", "a");
+			}
+
+			for (var i = 0; i <= 36; i++) {
+				if(i === 14 || i === 10 || i === 21)	
+					createBtnGroup("img/a.png", "b");
+				createBtnGroup("img/b.png", "b");
+			}
+
+			for (var i = 0; i <= 36; i++) {
+				if(i === 0 || i === 8)	
+					createBtnGroup("img/a.png", "c");
+				createBtnGroup("img/c.jpg", "c");
+			}
+
+			for (var i = 0; i <= 0; i++) {
+				createBtnGroup("img/a.png", "t");
+			}
+
+			// for (var i = 0; i <= 26; i++) {
+			// 	createBtnGroup("img/t.jpg", "t");
+			// }
+
+			$('.imageParent').on('click', function () {
+				$(this).next().toggleClass('enterLetterParent').children('input').focus();
+			});
+		}
+
+		function init() {
+			createBtnGroups();
+			renderBadges();			
+		}
+
+		$('.customPopover').popover({
+			html: true
+		});
+		init();
+	</script>
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+	  ga('create', 'UA-42457770-1', 'mywebsite.com');
+	  ga('send', 'pageview');
+
+	</script>
+</body>
+</html>

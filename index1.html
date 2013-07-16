@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Title</title>
+	<link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="css/custom-responsive.css" rel="stylesheet">
+    <link href="css/main.css" rel="stylesheet">
+</head>
+<body>
+	<a data-toggle="modal" href="#correctionModal" class="btn" id="launchCorrection">Launch demo modal</a>
+
+	<div id="correctionModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="correctionModalLabel" aria-hidden="true">
+	  <div class="modal-header">
+	    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+	    <h3 id="correctionModalLabel">Letter Based Correction</h3>
+	  </div>
+	  <div class="modal-body">
+	  	<!-- <p><span>Enter the command: </span><input autofocus id="goTo" type="text" placeholder=""><a href="#" class="pull-right" id="showHelp">How to Write a Command</a></p> -->
+	  	<div class="alert alert-block fade in" style="display:none;">
+        <button type="button" class="close" data-dismiss="alert" title="Dismiss this alert!!!">×</button>
+        <h4 class="alert-heading">Command Format</h4>
+        <p>A number should be followed by a letter to replace the existing letter</p>
+        <p>Examples: "21J", "1M", "16H"</p>
+      </div>
+	  	<div id="mediaGroup">
+	  		
+					    
+	  	</div>
+	  </div>
+	  <div class="modal-footer">
+	    <p class="pull-left" style="margin:0"><span>Enter the command: </span><input autofocus id="goTo" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group" title="Popover on top">Get Help</a></p>
+	    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+	    <button class="btn btn-primary" onclick="saveModifiedData()">Save Changes</button>
+	  </div>
+	</div>
+	<script src="js/jquery.js"></script>
+	<script src="js/bootstrap.js"></script>
+	<script src="js/keymaster.js"></script>
+	<script>
+		$('#correctionModal').on('shown', function () {
+			$('#goTo').focus(); 
+		});
+
+		$('#correctionModal').on('hidden', function () {
+		  $('#goTo').val("");
+		});
+
+		$('#goTo').on('keyup', function(e) {
+			var strGoTo = $('#goTo').val();
+			var goToNumber = strGoTo.substring(0, strGoTo.length - 1);
+			var lastChar = strGoTo.substring(strGoTo.length - 1);
+			var isNum = /^\d+$/.test(goToNumber);
+			var isLastCharAlpha = /[A-Za-z]/.test(lastChar);
+			if(isNum && isLastCharAlpha) {
+				$('.btn input').eq(parseInt(goToNumber) -1).val(lastChar);
+			}			
+		});
+
+		$('.btn input').on('keyup', function(e) {
+			if(e.keyCode == 13) {
+				$('#correctionModal').modal("hide");
+			}
+		});
+
+		$(document).keydown(function (e) {
+			if(e.ctrlKey && e.keyCode == 71) {
+				$("#goTo").focus();
+				e.preventDefault();
+			}
+			// CTRL + S(83) for saving modified data
+			else if(e.ctrlKey && e.keyCode == 83) {
+				saveModifiedData();
+				e.preventDefault();
+			}
+		})
+
+		$(document).keyup(function(e) {
+			if($(e.target).hasClass('enterLetter')) {
+				var letterEntered = $(e.target).val(),
+					isChar = /[A-Za-z]/.test(letterEntered);
+
+				if(isChar) {
+					var $targetGroup = $(".letterGroup[data-letter=" + letterEntered.toUpperCase() + "]"),
+						$elementToBeMoved = $(e.target).closest('.btn-group'),
+						oldGroupName = $elementToBeMoved.closest('.letterGroup');
+					if($targetGroup.length !== 0)
+						addElementInGroup(letterEntered.toUpperCase(), $elementToBeMoved);
+					else {
+						createGroup(letterEntered.toUpperCase());
+						addElementInGroup(letterEntered.toUpperCase(), $elementToBeMoved);
+					}
+					reRenderNumberBadegs();
+				}
+			}
+		});
+
+		$("#goTo").bind('input', function (e) {
+			// Format of command: First charater should be alphabet , 
+			// remaining should be numbers except last character and last character should be alphabet again
+			var isFirstAlpha = /^[A-Za-z]/.test(e.target.value),
+				remainingNumbers = parseInt(e.target.value.substring(1, e.target.value.length)),
+				isRemainingNumbers = !isNaN(remainingNumbers),
+				$sourceGroup, $destinationGroup, destinationGroupName;
+
+			if(isFirstAlpha) {
+				$sourceGroup  = $(".letterGroup[data-letter=" + e.target.value[0].toUpperCase() + "]");
+				$sourceGroup.addClass('letterGroupActive');
+				
+				// parseInt function can ommit the last alphabets which is part of our command
+				if(isRemainingNumbers) {
+					$('.btnGroupActive').removeClass('btnGroupActive');
+					$btnGroup = $($sourceGroup.children()[remainingNumbers - 1]).addClass('btnGroupActive');
+					if(/^[A-Za-z]/.test(e.target.value[e.target.value.length -1])) {
+						destinationGroupName = e.target.value[e.target.value.length -1].toUpperCase();
+						$destinationGroup = $(".letterGroup[data-letter=" + destinationGroupName + "]")
+						if($destinationGroup.length == 0) {
+							createGroup(destinationGroupName);
+						}
+						addElementInGroup(e.target.value[e.target.value.length -1].toUpperCase(), $btnGroup);
+						$('.btnGroupActive').removeClass('btnGroupActive');
+					}
+				}
+				else {
+					$('.btnGroupActive').removeClass('btnGroupActive');
+				}
+			}
+			else {
+				$('.letterGroupActive').removeClass('letterGroupActive');
+			}
+		});
+
+		function saveModifiedData () {
+			//Save functionality goes here
+			$('.newlyAdded').removeClass('newlyAdded');
+			$('#correctionModal').modal("hide");
+		}
+
+		function createGroup (groupName){
+			var mediaFormat = "<div class='media'>" +
+				"  <a class='pull-left' href='#'>" +
+				"    <img class='media-object img-polaroid' src='img/" + groupName.toLowerCase() + "_original.png' style='width:64px; height:64px;' alt=" + groupName + ".png>" +
+				"  </a>" +
+				"  <div class='media-body'>" +
+				"    <center class='centerBtns letterGroup' data-letter='" + groupName.toUpperCase() + "'>" +
+				"    </center>" +
+				"	</div>" +
+				"</div>";
+
+				$('#mediaGroup').append(mediaFormat);
+		}
+
+		function addElementInGroup (groupName, elementToBeMoved) {
+			var $targetGroup = $(".letterGroup[data-letter=" + groupName + "]");
+			var previousGroupName;
+			elementToBeMoved.find('input').parent().addClass("enterLetterParent");
+			previousGroupName = elementToBeMoved.find('input').val();
+			elementToBeMoved.find('input').val(groupName);
+			$targetGroup.append(elementToBeMoved);
+			elementToBeMoved.hide().show(300);
+			elementToBeMoved.addClass('newlyAdded');
+			elementToBeMoved.find('.imageParent').on('click', function () {
+				$(this).next().toggleClass('enterLetterParent').children('input').focus();
+			});
+			reRenderNumberBadegs();
+			$('.letterGroupActive').removeClass('letterGroupActive');
+			$('.btnGroupActive').removeClass('btnGroupActive');
+			// If group is empty then remove it
+			$sourceGroup = $(".letterGroup[data-letter=" + previousGroupName.toUpperCase() + "]");
+			if($sourceGroup.find('.btn-group').length == 0) {
+				$sourceGroup.closest('.media').remove();
+			}
+			$('#goTo').val("");
+		}
+
+		$("#showHelp").on('click', function() {
+			if($(".alert").is(":visible")) {
+				$(".alert").hide();
+				this.innerHTML = "Show Help";
+			} else {
+				$(".alert").show();
+				this.innerHTML = "Hide Help";
+			}
+		});
+
+		$('.alert').bind('closed', function () {
+		  $("#showHelp").remove();
+		});
+
+		$('#correctionModal').modal();
+
+		function reRenderNumberBadegs (){
+			$('.numberBadge').each(function () {
+				this.innerHTML = $(this).closest('.btn-group').index() + 1;
+			});
+		}
+
+		function renderBadges() {
+			reRenderNumberBadegs();
+		}
+
+		function createBtnGroup(imageScanned, scanResultValue){
+			var imgSource = imageScanned,
+				value = scanResultValue,
+				$targetGroup = $(".letterGroup[data-letter=" + value.toUpperCase() + "]"),
+				strBtnGroup = "<div class='btn-group btn-group-vertical'>" +
+				"<button disabled type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>" +
+				"<button type='button' class='btn customBtn imageParent'><img class='img-polaroid' src='" + imgSource + "' alt=''></button>" +
+				"<button type='button' class='btn customBtn enterLetterParent' tabindex='-1'><input class='enterLetter' type='text' value='" + value + "' maxlength='1'></button>" +
+				"</div>";
+
+
+			if($targetGroup.length == 0)
+				createGroup(value);
+
+			$targetGroup.append(strBtnGroup);			
+		}
+
+		function createBtnGroups () {
+			for (var i = 0; i <= 26; i++) {
+				createBtnGroup("img/a.png", "a");
+			};
+
+			for (var i = 0; i <= 36; i++) {
+				if(i === 14 || i === 10 || i === 21)	
+					createBtnGroup("img/a.png", "b");
+
+				createBtnGroup("img/b.png", "b");
+			};
+			$('.imageParent').on('click', function () {
+				$(this).next().toggleClass('enterLetterParent').children('input').focus();
+			});
+
+		}
+
+		function init() {
+			createBtnGroups();
+			renderBadges();			
+		}
+
+		$('.customPopover').popover({
+			html: true
+		});
+		init();
+	</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+body {
+font: 85% 'lucida grande',tahoma,verdana,arial,sans-serif;
+}
+
+.newlyAdded {
+border: 2px solid rgba(255, 0, 0, 0.44);
+}
+
+.letterGroupActive, .btnGroupActive {
+	border: 2px solid rgba(58, 135, 173, 0.63) !important;
+}
+
+.modal input {
+	margin-bottom: 0;
+}
+
+.modal-body {
+	max-height: 700px;
+	padding: 10px;
+}
+
+.modal-header {
+/*	background-color: #f3f3f3;
+	background-image: -moz-linear-gradient(#f9f9f9, #f3f3f3);
+	background-image: -webkit-linear-gradient(#f9f9f9, #f3f3f3);
+	background-image: linear-gradient(#f9f9f9, #f3f3f3);
+	background-repeat: repeat-x;
+	border-bottom: 1px #eaeaea solid;*/
+	background-color: #eaeaea;
+	background-image: -moz-linear-gradient(#fafafa, #eaeaea);
+	background-image: -webkit-linear-gradient(#fafafa, #eaeaea);
+	background-image: linear-gradient(#fafafa, #eaeaea);
+	background-repeat: repeat-x;
+	border: 1px solid #d5d5d5;
+}
+
+.modal-header h3 {
+	line-height: 18px;
+	font-size: inherit;
+}
+
+#launchCorrection{
+	margin-left: 15px;
+	margin-top: 15px;
+	vertical-align: top;
+}
+
+.btn input {
+	width: 24px;
+	margin-bottom: 0 !important;
+	text-align: center;
+	padding: 1px 6px;
+
+}
+
+.enterLetterParent {
+  display: none !important;
+}
+
+.img-polaroid {
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.btn .img-polaroid {
+	padding: 0;
+}
+
+.btn img {
+	max-height: 38px;
+	max-width: 38px;
+}
+
+.centerBtns {
+	border: 1px solid #eeeeee;
+	padding: 5px 10px 0;
+}
+
+.customBtn {
+	cursor: default;
+	width: 42px;
+	padding: 1px;
+}
+
+.customBtn:first-child{
+	background: #3a87ad;				
+}
+
+#correctionModal {
+	width: 90%;
+	margin-left: -45%;
+}
+
+.modal.fade.in {
+	top: 5%;
+}
+
+.modal .btn-group {
+	margin-bottom: 5px;
+	margin-left: 0;
+}
+
+.modal-footer {
+	padding: 4px 5px 5px;
+}
+
+.bordered {
+	margin: 15px 0;
+	padding: 10PX;
+	background-color: rgb(214, 214, 214);
+	border: 1px solid #ddd;
+}
+
+.leftSide {
+	width: 48px;
+	height: 48px;
+}
+
+#goToLetterGroup {
+	width: 12px;
+}
+
+.media {
+	margin-top: 10px;
+}
