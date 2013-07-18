@@ -18,20 +18,12 @@
 	    <h3 id="correctionModalLabel">Letter Based Correction</h3>
 	  </div>
 	  <div class="modal-body">
-	  	<!-- <p><span>Enter the command: </span><input autofocus id="goTo" type="text" placeholder=""><a href="#" class="pull-right" id="showHelp">How to Write a Command</a></p> -->
-	  	<div class="alert alert-block fade in" style="display:none;">
-        <button type="button" class="close" data-dismiss="alert" title="Dismiss this alert!!!">×</button>
-        <h4 class="alert-heading">Command Format</h4>
-        <p>A number should be followed by a letter to replace the existing letter</p>
-        <p>Examples: "21J", "1M", "16H"</p>
-      </div>
 	  	<div id="mediaGroup">
 									    
 	  	</div>
 	  </div>
 	  <div class="modal-footer">
-	    <p class="pull-left" style="margin:0"><span>Enter command: </span><input autofocus id="goToLetterGroup" type="text" placeholder="" maxlength="1"><input autofocus id="listToBeMoved" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group" title="Popover on top">Get Help</a></p>
-	    <!-- <span class="icon-remove pull-right" data-dismiss="modal"></span> -->
+	    <p class="pull-left" style="margin:0"><span>Enter command: </span><input autofocus id="goToLetterGroup" type="text" placeholder="" maxlength="1"><input autofocus id="listToBeMoved" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group<br><b>Examples: 'A' & '21J', 'B' & '1M', 'Y' & '16H'" title="Popover on top"><i class="icon-question-sign"></i></a><span id="groupNotPresent" class="label label-important hide">Group Not Present</span></p>
 	    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 	    <button class="btn btn-primary" onclick="saveModifiedData()">Save Changes</button>
 	  </div>
@@ -40,8 +32,8 @@
 	<script src="js/underscore.js"></script>
 	<script src="js/bootstrap.js"></script>
 	<script id="btnGroupTemplate" type="text/template">
-		<div class='btn-group btn-group-vertical'>
-			<button disabled type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>
+		<div class='btn-group btn-group-vertical' disabled>
+			<button type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>
 			<button type='button' class='btn customBtn imageParent'><img class='img-polaroid' src='<%= imgSource %>' alt='<%= value %>.png'></button>
 			<button type='button' class='btn customBtn enterLetterParent' tabindex='-1'><input class='enterLetter' type='text' value='<%= value %>' maxlength='1'></button>
 		</div>
@@ -57,7 +49,22 @@
 		</div>
 	</script>
 	<script>
-		var a = Date.now();
+		var fit_modal_body = function() {
+			var modalBody = $(".modal-body"),
+				headerheight = $('.modal-header')[0].offsetHeight,
+				footerheight = $('.modal-footer')[0].offsetHeight,
+				modalPadding = parseInt($('.modal').css('border-width')),
+				topAndBottom = 40,
+				modalBodyPadding = 20;
+
+		  var modalHeight = window.innerHeight - topAndBottom - modalPadding - modalBodyPadding- headerheight - footerheight;
+		  modalBody.css("max-height", "" + modalHeight + "px");
+		};
+
+		$(window).resize(function() {
+			return fit_modal_body();
+		});
+
 		var currentActiveGroup;
 
 		function isNumber(n) {
@@ -66,6 +73,7 @@
 
 		$('#correctionModal').on('shown', function () {
 			$('#goToLetterGroup').focus().select(); 
+			fit_modal_body();
 		});
 
 		$('#correctionModal').on('hidden', function () {
@@ -89,7 +97,6 @@
 				saveModifiedData();
 				e.preventDefault();
 			}
-
 		});
 
 		$(document).keyup(function(e) {
@@ -101,8 +108,9 @@
 					var $targetGroup = $(".letterGroup[data-letter=" + letterEntered + "]"),
 						$elementToBeMoved = $(e.target).closest('.btn-group'),
 						oldGroupName = $elementToBeMoved.closest('.letterGroup');
-					if($targetGroup.length !== 0)
+					if($targetGroup.length !== 0) {
 						addElementInGroup(letterEntered, $elementToBeMoved);
+					}
 					else {
 						createLetterGroup(letterEntered);
 						addElementInGroup(letterEntered, $elementToBeMoved);
@@ -115,8 +123,27 @@
 		$("#goToLetterGroup").bind('input', function (e) {
 			currentActiveGroup = this.value.toUpperCase();
 			$('.letterGroupActive').removeClass('letterGroupActive');
-			$(".letterGroup[data-letter=" + currentActiveGroup + "]").addClass('letterGroupActive');
-			$('#listToBeMoved').focus().select();
+			var elem = document.getElementById('groupNotPresent');
+			var sourceGroup = $(".letterGroup[data-letter=" + currentActiveGroup + "]");
+			var topPadding = 10;
+			$(elem).addClass("hide");
+
+			// If group is present focus on next input box else inform the user
+			if(sourceGroup.length && this.value.length) {
+				sourceGroup.addClass('letterGroupActive');
+				// Scroll ".modal-body" to that element
+				$('.modal-body')[0].scrollTop = sourceGroup[0].offsetTop - topPadding;
+				$('#listToBeMoved').focus().select();
+			}
+			else {
+				var elem = document.getElementById('groupNotPresent');
+				$(elem).removeClass("hide");
+				elem.style.webkitAnimationDuration = "400ms";
+				setTimeout(function(){
+					elem.style.webkitAnimationDuration = "0ms";
+				}, 500);
+				$(this).select();
+			}
 		});
 
 		$("#listToBeMoved").bind('input', function (e) {
@@ -173,14 +200,13 @@
 			previousGroupName = elementToBeMoved.find('input').val();
 			elementToBeMoved.find('input').val(groupName);
 			$targetGroup.append(elementToBeMoved);
-			//elementToBeMoved.hide().show("300");
 			elementToBeMoved.addClass('newlyAdded');
 			
 			reRenderNumberBadegs();
 			$('.btnGroupActive').removeClass('btnGroupActive');
-			// If group is empty then remove it
+			// If group is going to remove after moving operation then remove that group
 			$sourceGroup = $(".letterGroup[data-letter=" + previousGroupName.toUpperCase() + "]");
-			if($sourceGroup.find('.btn-group').length == 0) {
+			if(!$sourceGroup.find('.btn-group').length) {
 				$sourceGroup.closest('.media').remove();
 			}
 		}
@@ -223,15 +249,17 @@
 				createBtnGroup("img/b.png", "b");
 			}
 
-			for (var i = 0; i <= 36; i++) {
-				if(i === 0 || i === 8)	
-					createBtnGroup("img/a.png", "c");
-				createBtnGroup("img/c.jpg", "c");
-			}
+			// for (var i = 0; i <= 5; i++) {
+			// 	createBtnGroup("img/c.jpg", "c");
+			// }
 
-			for (var i = 0; i <= 0; i++) {
-				createBtnGroup("img/a.png", "t");
-			}
+			// for (var i = 0; i <= 136; i++) {
+			// 	createBtnGroup("img/p.jpg", "p");
+			// }
+
+			// for (var i = 0; i <= 89; i++) {
+			// 	createBtnGroup("img/t.jpg", "t");
+			// }
 
 			$('.imageParent').on('click', function () {
 				$(this).next().toggleClass('enterLetterParent').children('input').focus();
@@ -239,16 +267,19 @@
 		}
 
 		function init() {
-			$('#correctionModal').modal();
 			createBtnGroups();
 			reRenderNumberBadegs();			
-			// $('.customPopover').popover({
-			// 	html: true
-			// });
+			$('.customPopover').popover({
+				html: true,
+				trigger: 'hover'
+			});
 		}
 		
+		$('launchCorrection').on('click', function(){
+			$('#correctionModal').modal();
+		});
+
 		init();
-		console.log(Date.now() - a);
 	</script>
 </body>
 </html>
