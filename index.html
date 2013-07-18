@@ -23,7 +23,8 @@
 	  	</div>
 	  </div>
 	  <div class="modal-footer">
-	    <p class="pull-left" style="margin:0"><span>Enter command: </span><input autofocus id="goToLetterGroup" type="text" placeholder="" maxlength="1"><input autofocus id="listToBeMoved" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top" data-content="First char: Source Group.<br>Last Char: Target Group.<br>Middle characters should be numbers to jump up within group<br><b>Examples: 'A' & '21J', 'B' & '1M', 'Y' & '16H'" title="Popover on top"><i class="icon-question-sign"></i></a><span id="groupNotPresent" class="label label-important hide">Group Not Present</span></p>
+	    <p class="pull-left" style="margin:0"><span>Enter command: </span><input autofocus id="goToLetterGroup" type="text" placeholder="" maxlength="1"><input autofocus id="listToBeMoved" type="text" placeholder=""><a href="#" class="btn customPopover" data-toggle="popover" data-placement="top"><i class="icon-question-sign"></i></a><span id="groupNotPresent" class="label label-important hide">Group Not Present</span></p>
+	    <button id="loadNext" class="btn pull-left"><i class="icon-arrow-right"></i></button>
 	    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 	    <button class="btn btn-primary" onclick="saveModifiedData()">Save Changes</button>
 	  </div>
@@ -35,6 +36,7 @@
 		<div class='btn-group btn-group-vertical' disabled>
 			<button type='button' class='btn customBtn'><span class='badge badge-info numberBadge'></span></button>
 			<button type='button' class='btn customBtn imageParent'><img class='img-polaroid' src='<%= imgSource %>' alt='<%= value %>.png'></button>
+			<!-- <button type='button' class='btn customBtn imageParent'><canvas height="38" width="38"></canvas></button> -->
 			<button type='button' class='btn customBtn enterLetterParent' tabindex='-1'><input class='enterLetter' type='text' value='<%= value %>' maxlength='1'></button>
 		</div>
 	</script>
@@ -154,6 +156,7 @@
 			if(targetElement) {
 				var $elementToBeMoved = $sourceGroup.find('.btn-group').eq(targetElement.number - 1);
 				addElementInGroup(targetElement.target, $elementToBeMoved);
+				reRenderNumberBadegs();
 				e.target.value = "";
 			}
 		});
@@ -169,6 +172,7 @@
 						target: target.toUpperCase()
 					}
 			}
+
 			var $sourceGroup = $(".letterGroup[data-letter=" + currentActiveGroup + "]");
 			number = numberTarget.substring(0, numberTarget.length),
 			$('.btnGroupActive').removeClass('btnGroupActive');
@@ -201,8 +205,6 @@
 			elementToBeMoved.find('input').val(groupName);
 			$targetGroup.append(elementToBeMoved);
 			elementToBeMoved.addClass('newlyAdded');
-			
-			reRenderNumberBadegs();
 			$('.btnGroupActive').removeClass('btnGroupActive');
 			// If group is going to remove after moving operation then remove that group
 			$sourceGroup = $(".letterGroup[data-letter=" + previousGroupName.toUpperCase() + "]");
@@ -212,9 +214,11 @@
 		}
 
 		function reRenderNumberBadegs (){
+			var a = Date.now();	
 			$('.numberBadge').each(function () {
 				this.innerHTML = $(this).closest('.btn-group').index() + 1;
 			});
+			console.log(Date.now() - a);
 		}
 
 		function createBtnGroup(imageScanned, scanResultValue){
@@ -248,22 +252,26 @@
 					createBtnGroup("img/a.png", "b");
 				createBtnGroup("img/b.png", "b");
 			}
+			
+			for (var i = 0; i <= 5; i++) {
+				createBtnGroup("img/c.jpg", "c");
+			}
 
-			// for (var i = 0; i <= 5; i++) {
-			// 	createBtnGroup("img/c.jpg", "c");
-			// }
+			for (var i = 0; i <= 136; i++) {
+				createBtnGroup("img/p.jpg", "p");
+			}
 
-			// for (var i = 0; i <= 136; i++) {
-			// 	createBtnGroup("img/p.jpg", "p");
-			// }
-
-			// for (var i = 0; i <= 89; i++) {
-			// 	createBtnGroup("img/t.jpg", "t");
-			// }
+			for (var i = 0; i <= 89; i++) {
+				createBtnGroup("img/t.jpg", "t");
+			}
 
 			$('.imageParent').on('click', function () {
 				$(this).next().toggleClass('enterLetterParent').children('input').focus();
 			});
+		}
+
+		function loadNext() {
+			$('.media').remove();
 		}
 
 		function init() {
@@ -271,12 +279,27 @@
 			reRenderNumberBadegs();			
 			$('.customPopover').popover({
 				html: true,
-				trigger: 'hover'
+				title: 'Help for writing Command',
+				content: 'First char: Source Group.' + 
+					'<br>Last Char: Target Group.' +
+					'<br>Middle characters should be numbers to jump up within group.' +
+					'<br><b>Examples:' +
+					'<br>1] "A" & "21J"<br>2] "B" & "1M"<br>3] "Y" & "16H"'
 			});
 		}
 		
 		$('launchCorrection').on('click', function(){
-			$('#correctionModal').modal();
+			$('#correctionModal').modal("show");
+		});
+
+		$('#loadNext').mousedown(function() {
+			$(this).find('i').removeClass().addClass('icon-spinner icon-spin icon-large');
+		});
+		
+		$('#loadNext').mouseup(function() {
+			loadNext();
+			reRenderNumberBadegs();
+			$(this).find('i').removeClass().addClass('icon-arrow-right');
 		});
 
 		init();
